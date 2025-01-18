@@ -1,3 +1,5 @@
+// NOTE: This is still experimental and wasn't cryptanalysed properly. Use with caution (and love).
+
 #include "dove.h"
 #include <string.h>
 
@@ -18,27 +20,24 @@ static uint32_t rotright(uint32_t value, int shift) {
     return (value >> shift) | (value << (WORD_SIZE - shift));
 }
 
-// Enhanced non-linear mixing function
 static uint32_t dove_mix(uint32_t a, uint32_t b, uint32_t c) {
     a ^= rotleft(b, 7) ^ rotright(c, 13);
     b ^= rotleft(c, 9) ^ rotright(a, 11);
     c ^= rotleft(a, 15) ^ rotright(b, 5);
     
-    // Additional non-linear operations
-    a *= 0x6170766f;  // Large prime constant
+    a *= 0x2043DC5B3;  // large prime constant
     b += rotleft(c, 13);
     c ^= rotright(a, 11);
     
     return a ^ b ^ c;
 }
 
-// Enhanced transform with better non-linearity
 static uint32_t dove_transform(uint32_t x) {
     x ^= rotleft(x, 5) ^ rotright(x, 7);
-    x *= 0x6170766f;  // Prime constant for multiplication diffusion
+    x *= 0x2043DC5B3;  // prime constant for multiplication diffusion
     x ^= rotleft(x, 13);
     x += rotright(x, 11);
-    x ^= (x >> 17) | (x << 15);  // Additional mixing
+    x ^= (x >> 17) | (x << 15);  // some other mixing
     return x;
 }
 
@@ -53,7 +52,7 @@ static void key_schedule(const uint8_t* key, size_t key_length, const uint8_t* n
                  ((uint32_t)key[(i + 3) % key_length]);
     }
     
-    // Mix nonce with complex diffusion
+    // Mix nonce with some diffusion
     for (size_t i = 0; i < 4; i++) {
         uint32_t nonce_word = ((uint32_t)nonce[i*4] << 24) |
                              ((uint32_t)nonce[i*4+1] << 16) |
@@ -65,7 +64,7 @@ static void key_schedule(const uint8_t* key, size_t key_length, const uint8_t* n
         }
     }
     
-    // Multiple mixing rounds for better diffusion
+    // Some other diffusion with mixing rounds
     for (int round = 0; round < ROUNDS; round++) {
         for (size_t i = 0; i < STATE_SIZE; i++) {
             temp[i] = dove_transform(temp[i]);
